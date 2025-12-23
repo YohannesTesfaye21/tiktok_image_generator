@@ -3,7 +3,7 @@ services:
     name: tiktok-image-api
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn api_server:app
+    startCommand: gunicorn --timeout 120 --workers 2 api_server:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.0

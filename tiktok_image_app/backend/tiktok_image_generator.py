@@ -96,9 +96,17 @@ class TikTokImageGenerator:
     def _interpolate_color(self, colors: List[Tuple[int, int, int]], 
                           ratio: float) -> Tuple[int, int, int]:
         """Interpolate between colors based on ratio."""
+        if not colors or len(colors) == 0:
+            return (255, 255, 255)  # Default white if no colors
+        
         ratio = max(0, min(1, ratio))
+        if len(colors) == 1:
+            return colors[0]
+        
         segment = ratio * (len(colors) - 1)
         index = int(segment)
+        # Ensure index is within bounds
+        index = max(0, min(index, len(colors) - 2))
         t = segment - index
         
         if index >= len(colors) - 1:

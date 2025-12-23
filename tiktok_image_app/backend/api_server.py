@@ -40,12 +40,12 @@ except ImportError as e:
     image_to_video = None
 
 # Import image generator
-# First try same directory (for deployment), then try other paths
+# PRIORITY: Same directory first (for deployment), then fallback to other paths
 photo_editor_paths = [
-    os.path.dirname(__file__),  # Same directory as api_server.py (for deployment)
+    os.path.dirname(__file__),  # Same directory as api_server.py (for deployment) - PRIORITY
+    os.path.join(os.path.dirname(__file__), '../tiktok_photo_editor'),  # Alternative relative
     os.path.join(os.path.dirname(__file__), '../../tiktok_photo_editor'),  # Relative path (local dev)
     '/Users/m2pro/Desktop/tiktok/tiktok_photo_editor',  # Absolute path (local dev)
-    os.path.join(os.path.dirname(__file__), '../tiktok_photo_editor'),  # Alternative relative
 ]
 
 photo_editor_path = None

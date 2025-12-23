@@ -13,6 +13,12 @@ import secrets
 import json
 
 # Import TikTok API modules
+# Initialize as None first, then try to import
+TIKTOK_AVAILABLE = False
+VIDEO_CONVERSION_AVAILABLE = False
+TikTokAPI = None
+image_to_video = None
+
 try:
     from tiktok_api import TikTokAPI
     try:
@@ -27,8 +33,10 @@ try:
     print("✓ TikTok API modules loaded")
 except ImportError as e:
     print(f"⚠️  TikTok API modules not available: {e}")
+    print(f"   Error details: {type(e).__name__}: {str(e)}")
     TIKTOK_AVAILABLE = False
     VIDEO_CONVERSION_AVAILABLE = False
+    TikTokAPI = None
     image_to_video = None
 
 # Import image generator
@@ -68,15 +76,18 @@ CORS(app, supports_credentials=True)  # Enable CORS with credentials for OAuth
 generator = TikTokImageGenerator(output_dir="output")
 
 # Initialize TikTok API (if available)
+tiktok_api = None
 try:
-    if TIKTOK_AVAILABLE:
+    if TIKTOK_AVAILABLE and TikTokAPI is not None:
         tiktok_api = TikTokAPI()
         print("✓ TikTok API client initialized")
     else:
         tiktok_api = None
-        print("⚠️  TikTok API client not initialized (TIKTOK_AVAILABLE=False)")
+        print("⚠️  TikTok API client not initialized (TIKTOK_AVAILABLE=False or TikTokAPI=None)")
 except Exception as e:
     print(f"❌ Failed to initialize TikTok API: {e}")
+    import traceback
+    print(traceback.format_exc())
     tiktok_api = None
     TIKTOK_AVAILABLE = False
 
@@ -739,7 +750,15 @@ def tiktok_post_multiple():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# Print all registered routes for debugging
 if __name__ == '__main__':
+    print("\n" + "="*60)
+    print("📋 REGISTERED ROUTES:")
+    print("="*60)
+    for rule in app.url_map.iter_rules():
+        print(f"  {rule.methods} {rule.rule}")
+    print("="*60 + "\n")
+    
     port = int(os.environ.get('PORT', 8000))
     debug = os.environ.get('FLASK_ENV') == 'development'
     print("Starting TikTok Image Generator API server...")

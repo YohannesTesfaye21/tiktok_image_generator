@@ -60,7 +60,7 @@ class TikTokImageGenerator:
             (0, 0, 0),         # Black
         ]
     
-    def create_gradient_background(self, colors: List[Tuple[int, int, int]], 
+    def create_gradient_background(self, colors: List[Tuple[int, int, int]],
                                    direction: str = "vertical") -> Image.Image:
         """Create a gradient background.
         
@@ -71,6 +71,33 @@ class TikTokImageGenerator:
         Returns:
             PIL Image with gradient background
         """
+        # Validate and sanitize colors
+        if not colors or len(colors) == 0:
+            print("⚠️  Warning: No colors provided, using default white")
+            colors = [(255, 255, 255)]
+        
+        # Filter and validate each color
+        valid_colors = []
+        for i, color in enumerate(colors):
+            if not isinstance(color, (tuple, list)) or len(color) < 3:
+                print(f"⚠️  Warning: Invalid color at index {i}: {color}, skipping")
+                continue
+            try:
+                # Ensure all values are integers in valid range
+                r = max(0, min(255, int(color[0])))
+                g = max(0, min(255, int(color[1])))
+                b = max(0, min(255, int(color[2])))
+                valid_colors.append((r, g, b))
+            except (ValueError, TypeError, IndexError) as e:
+                print(f"⚠️  Warning: Error processing color {color}: {e}, skipping")
+                continue
+        
+        if len(valid_colors) == 0:
+            print("⚠️  Warning: No valid colors after filtering, using default white")
+            valid_colors = [(255, 255, 255)]
+        
+        colors = valid_colors
+        
         img = Image.new('RGB', (self.WIDTH, self.HEIGHT))
         draw = ImageDraw.Draw(img)
         
@@ -114,6 +141,23 @@ class TikTokImageGenerator:
         
         c1 = colors[index]
         c2 = colors[index + 1]
+        
+        # Validate that c1 and c2 are tuples/lists with 3 elements
+        if not isinstance(c1, (tuple, list)) or len(c1) < 3:
+            print(f"⚠️  Warning: Invalid color c1: {c1}, using default white")
+            c1 = (255, 255, 255)
+        if not isinstance(c2, (tuple, list)) or len(c2) < 3:
+            print(f"⚠️  Warning: Invalid color c2: {c2}, using default white")
+            c2 = (255, 255, 255)
+        
+        # Ensure all values are numeric
+        try:
+            c1 = (int(c1[0]), int(c1[1]), int(c1[2]))
+            c2 = (int(c2[0]), int(c2[1]), int(c2[2]))
+        except (ValueError, TypeError, IndexError) as e:
+            print(f"⚠️  Warning: Error converting colors to int: {e}, c1={c1}, c2={c2}")
+            c1 = (255, 255, 255)
+            c2 = (255, 255, 255)
         
         return (
             int(c1[0] + (c2[0] - c1[0]) * t),

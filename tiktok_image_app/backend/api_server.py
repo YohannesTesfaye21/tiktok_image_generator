@@ -73,7 +73,11 @@ app.secret_key = secrets.token_hex(32)  # Required for sessions
 CORS(app, supports_credentials=True)  # Enable CORS with credentials for OAuth
 
 # Initialize the generator
-generator = TikTokImageGenerator(output_dir="output")
+# Use absolute path for output directory to avoid issues on Render.com
+output_dir = os.path.join(os.path.dirname(__file__), "output")
+os.makedirs(output_dir, exist_ok=True)
+generator = TikTokImageGenerator(output_dir=output_dir)
+print(f"✓ Image generator initialized with output_dir: {output_dir}")
 
 # Initialize TikTok API (if available)
 tiktok_api = None
@@ -348,16 +352,25 @@ def tiktok_authorize():
     print(f"🔐 TikTok authorize endpoint called")
     print(f"   TIKTOK_AVAILABLE: {TIKTOK_AVAILABLE}")
     print(f"   tiktok_api: {tiktok_api}")
+    print(f"   TikTokAPI class: {TikTokAPI}")
     
     if not TIKTOK_AVAILABLE:
         error_msg = 'TikTok API not available. Check backend logs for import errors.'
         print(f"❌ {error_msg}")
-        return jsonify({'error': error_msg}), 503
+        return jsonify({
+            'success': False,
+            'error': error_msg,
+            'details': 'TikTok API modules failed to import. Check that tiktok_api.py and tiktok_config.py are in the backend directory.'
+        }), 503
     
     if tiktok_api is None:
         error_msg = 'TikTok API client not initialized.'
         print(f"❌ {error_msg}")
-        return jsonify({'error': error_msg}), 503
+        return jsonify({
+            'success': False,
+            'error': error_msg,
+            'details': 'TikTok API client could not be initialized. Check backend logs.'
+        }), 503
     
     try:
         # Generate state for CSRF protection

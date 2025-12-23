@@ -45,7 +45,11 @@ class TikTokAPI:
             'scope': self.scopes,
             'response_type': 'code',
             'redirect_uri': self.redirect_uri,
-            'state': state
+            'state': state,
+            # Add parameters to encourage web-based login
+            'enter_method': 'web',  # Force web-based login
+            'hide_left_icon': '0',
+            'type': '',  # Empty type to avoid app-specific flows
         }
         
         url = f"{TIKTOK_AUTH_URL}?" + "&".join([f"{k}={v}" for k, v in params.items()])

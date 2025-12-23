@@ -142,21 +142,32 @@ class TikTokImageGenerator:
         c1 = colors[index]
         c2 = colors[index + 1]
         
-        # Validate that c1 and c2 are tuples/lists with 3 elements
-        if not isinstance(c1, (tuple, list)) or len(c1) < 3:
-            print(f"⚠️  Warning: Invalid color c1: {c1}, using default white")
-            c1 = (255, 255, 255)
-        if not isinstance(c2, (tuple, list)) or len(c2) < 3:
-            print(f"⚠️  Warning: Invalid color c2: {c2}, using default white")
-            c2 = (255, 255, 255)
-        
-        # Ensure all values are numeric
+        # Validate and convert c1
         try:
-            c1 = (int(c1[0]), int(c1[1]), int(c1[2]))
-            c2 = (int(c2[0]), int(c2[1]), int(c2[2]))
-        except (ValueError, TypeError, IndexError) as e:
-            print(f"⚠️  Warning: Error converting colors to int: {e}, c1={c1}, c2={c2}")
+            if not isinstance(c1, (tuple, list)) or len(c1) < 3:
+                print(f"⚠️  Warning: Invalid color c1: {c1}, using default white")
+                c1 = (255, 255, 255)
+            else:
+                # Safely convert to int tuple
+                c1 = (int(c1[0]), int(c1[1]), int(c1[2]))
+                # Validate range
+                c1 = (max(0, min(255, c1[0])), max(0, min(255, c1[1])), max(0, min(255, c1[2])))
+        except (ValueError, TypeError, IndexError, AttributeError) as e:
+            print(f"⚠️  Warning: Error processing c1: {e}, c1={c1}, using default white")
             c1 = (255, 255, 255)
+        
+        # Validate and convert c2
+        try:
+            if not isinstance(c2, (tuple, list)) or len(c2) < 3:
+                print(f"⚠️  Warning: Invalid color c2: {c2}, using default white")
+                c2 = (255, 255, 255)
+            else:
+                # Safely convert to int tuple
+                c2 = (int(c2[0]), int(c2[1]), int(c2[2]))
+                # Validate range
+                c2 = (max(0, min(255, c2[0])), max(0, min(255, c2[1])), max(0, min(255, c2[2])))
+        except (ValueError, TypeError, IndexError, AttributeError) as e:
+            print(f"⚠️  Warning: Error processing c2: {e}, c2={c2}, using default white")
             c2 = (255, 255, 255)
         
         return (

@@ -68,7 +68,17 @@ CORS(app, supports_credentials=True)  # Enable CORS with credentials for OAuth
 generator = TikTokImageGenerator(output_dir="output")
 
 # Initialize TikTok API (if available)
-tiktok_api = TikTokAPI() if TIKTOK_AVAILABLE else None
+try:
+    if TIKTOK_AVAILABLE:
+        tiktok_api = TikTokAPI()
+        print("✓ TikTok API client initialized")
+    else:
+        tiktok_api = None
+        print("⚠️  TikTok API client not initialized (TIKTOK_AVAILABLE=False)")
+except Exception as e:
+    print(f"❌ Failed to initialize TikTok API: {e}")
+    tiktok_api = None
+    TIKTOK_AVAILABLE = False
 
 # In-memory token storage (use database in production)
 # Format: {user_id: {'access_token': ..., 'refresh_token': ..., 'expires_at': ...}}
@@ -324,24 +334,44 @@ def serve_image(filename):
 @app.route('/api/tiktok/auth/authorize', methods=['GET'])
 def tiktok_authorize():
     """Initiate TikTok OAuth flow."""
+    print(f"🔐 TikTok authorize endpoint called")
+    print(f"   TIKTOK_AVAILABLE: {TIKTOK_AVAILABLE}")
+    print(f"   tiktok_api: {tiktok_api}")
+    
     if not TIKTOK_AVAILABLE:
-        return jsonify({'error': 'TikTok API not available'}), 503
+        error_msg = 'TikTok API not available. Check backend logs for import errors.'
+        print(f"❌ {error_msg}")
+        return jsonify({'error': error_msg}), 503
+    
+    if tiktok_api is None:
+        error_msg = 'TikTok API client not initialized.'
+        print(f"❌ {error_msg}")
+        return jsonify({'error': error_msg}), 503
     
     try:
         # Generate state for CSRF protection
         state = secrets.token_urlsafe(32)
         session['oauth_state'] = state
+        print(f"✓ Generated OAuth state: {state[:10]}...")
         
         # Get authorization URL
+        print(f"📞 Calling tiktok_api.get_authorization_url()...")
         auth_url, _ = tiktok_api.get_authorization_url(state)
+        print(f"✓ Got authorization URL: {auth_url[:50]}...")
         
-        return jsonify({
+        response_data = {
             'success': True,
             'auth_url': auth_url,
             'state': state
-        })
+        }
+        print(f"✅ Returning success response")
+        return jsonify(response_data)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        error_msg = f'TikTok authorization error: {str(e)}'
+        print(f"❌ {error_msg}")
+        import traceback
+        print(traceback.format_exc())
+        return jsonify({'error': error_msg}), 500
 
 @app.route('/auth/callback', methods=['GET'])
 def tiktok_callback():

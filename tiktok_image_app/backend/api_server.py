@@ -3,7 +3,7 @@ Flask API server for TikTok Image Generator
 Handles image generation requests from Flutter app
 """
 
-from flask import Flask, request, jsonify, redirect, session
+from flask import Flask, request, jsonify, redirect, session, send_from_directory
 from flask_cors import CORS
 import sys
 import os
@@ -212,11 +212,18 @@ def generate_images():
                 image_paths.append(filepath)
                 print(f"  ✓ Generated content-based image {i+1}/{len(texts)}: {filename}")
             
-            absolute_paths = [os.path.abspath(path) for path in image_paths]
+            # Return HTTP URLs instead of file paths
+            base_url = request.url_root.rstrip('/')
+            image_urls = []
+            for path in image_paths:
+                filename = os.path.basename(path)
+                image_url = f"{base_url}/api/images/{filename}"
+                image_urls.append(image_url)
+            
             return jsonify({
                 'success': True,
-                'image_paths': absolute_paths,
-                'count': len(absolute_paths)
+                'image_paths': image_urls,  # Now returns URLs
+                'count': len(image_urls)
             })
         
         # Convert gradient direction
@@ -272,13 +279,21 @@ def generate_images():
             # Use random gradients (default behavior)
             image_paths = generator.generate_batch(texts)
         
-        # Return absolute paths
-        absolute_paths = [os.path.abspath(path) for path in image_paths]
+        # Return HTTP URLs instead of file paths
+        # Get base URL from request
+        base_url = request.url_root.rstrip('/')
+        image_urls = []
+        for path in image_paths:
+            # Extract just the filename
+            filename = os.path.basename(path)
+            # Create HTTP URL
+            image_url = f"{base_url}/api/images/{filename}"
+            image_urls.append(image_url)
         
         return jsonify({
             'success': True,
-            'image_paths': absolute_paths,
-            'count': len(absolute_paths)
+            'image_paths': image_urls,  # Now returns URLs
+            'count': len(image_urls)
         })
     
     except Exception as e:
@@ -288,6 +303,19 @@ def generate_images():
 def health():
     """Health check endpoint."""
     return jsonify({'status': 'ok', 'tiktok_available': TIKTOK_AVAILABLE})
+
+@app.route('/api/images/<path:filename>', methods=['GET'])
+def serve_image(filename):
+    """Serve generated images via HTTP."""
+    try:
+        # Get the output directory
+        output_dir = generator.output_dir
+        # Security: Only serve files from output directory
+        if not os.path.exists(os.path.join(output_dir, filename)):
+            return jsonify({'error': 'Image not found'}), 404
+        return send_from_directory(output_dir, filename)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # ============================================================================
 # TIKTOK OAUTH ENDPOINTS
